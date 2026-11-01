@@ -35,6 +35,16 @@ companions. Graceful failure/cancellation cleans partials and indexes. Abrupt
 termination can leave scratch files. No persistent job database or resumable
 encode state exists; do not add SwiftData to this synchronous API.
 
+File loudness defaults to measurement only: K weighting,400ms complete blocks,
+100ms hops,-70LUFS absolute and-10LU relative gates. Eight-byte energies use a
+bounded disk index on the output volume. Count only selected source samples;
+exclude coding padding/tail. Ordinary layouts measure source PCM; Atmos measures
+the prepared5.1 compatibility presentation after its existing limiter. Observe
+delayed spatial frames in output order and flush the final frame. Report scope,
+weights, status and sample peak (not true peak). No automatic PCM normalization or
+measured-value substitution into dialnorm. Metadata defaults to-31; explicit
+numeric dialnorm remains supported. Preserve original public initializer overloads.
+
 Workers are bounded: threads0 automatic up to8,1 serial, manual up to128.
 Parallelize independent channel/element/band/block work with owned results.
 Keep overlap, positions, matrix history, sequence, authentication and output

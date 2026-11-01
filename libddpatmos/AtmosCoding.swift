@@ -191,6 +191,7 @@ final class AtmosDDPEncoder {
   let core: DDPEncoder
   private let spatial: AtmosSpatialRenderer
   private let metadata: ((UInt64) throws -> [DDPPositionEvent])?
+  private let observePCM: (([Float]) throws -> Void)?
   private var pending: AtmosSpatialFrame?
   private var limiter = AtmosLookaheadLimiter()
   private var previousElements: [[Double]]
@@ -201,7 +202,8 @@ final class AtmosDDPEncoder {
   private var sequence = JOCFrameSequence()
   init(
     source: DDPSourceInfo, configuration: DDPConfiguration, elements: Int, mode: DDPObjectMode,
-    metadata: ((UInt64) throws -> [DDPPositionEvent])? = nil
+    metadata: ((UInt64) throws -> [DDPPositionEvent])? = nil,
+    observePCM: (([Float]) throws -> Void)? = nil
   )
     throws
   {
@@ -214,6 +216,7 @@ final class AtmosDDPEncoder {
     }
     self.source = source
     self.metadata = metadata
+    self.observePCM = observePCM
     count = elements - 1
     self.mode = mode
     var c = configuration
@@ -291,6 +294,7 @@ final class AtmosDDPEncoder {
         Float(downmix[3][f]), Float(downmix[4][f]),
       ]
     }
+    try observePCM?(interleaved)
     sequence.advance()
     return try core.encode(interleaved, emdf: metadata, complexity: count + 1)
   }

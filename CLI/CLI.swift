@@ -29,7 +29,7 @@ import libddpatmos
       return
     }
     if arguments == ["--version"] {
-      print("ddpatmos 1.1.1 / Swift 6")
+      print("ddpatmos 1.2.0 / Swift 6")
       return
     }
     var a = arguments
@@ -84,8 +84,20 @@ import libddpatmos
         options.configuration.threads = n
       case "--dialnorm":
         let v = try value()
-        guard let n = Int(v) else { throw DDPError.invalidConfiguration("Invalid dialnorm") }
-        options.configuration.dialogueLevel = n
+        if v.lowercased() == "measure" {
+          options.loudnessMode = .measure
+          options.configuration.dialogueLevel = -31
+        } else {
+          guard let n = Int(v) else {
+            throw DDPError.invalidConfiguration("Dialnorm must be measure or -31...-1")
+          }
+          options.configuration.dialogueLevel = n
+        }
+      case "--loudness":
+        guard let mode = DDPLoudnessMode(rawValue: try value().lowercased()) else {
+          throw DDPError.invalidConfiguration("Loudness mode must be measure or off")
+        }
+        options.loudnessMode = mode
       case "-sc", "--spatial-clusters":
         let v = try value()
         guard let n = Int(v), [12, 14, 16].contains(n) else {
@@ -170,7 +182,8 @@ import libddpatmos
     -b, --bitrate KBIT         Total bitrate, default 768
         --downmix-mode MODE   LTRT|LORO, default LTRT
         --layout LAYOUT       Ordinary PCM channel layout in WAVE order
-        --dialnorm DB         -31...-1, default -31
+        --dialnorm VALUE      measure (default), or explicit metadata -31...-1
+        --loudness MODE       measure|off, default measure; never normalizes PCM
     -sc,--spatial-clusters N   Atmos transport elements: 12|14|16, default 16
         --object-mode MODE    dynamic|channelbase, default dynamic
         --start SECONDS       Input start, default 0

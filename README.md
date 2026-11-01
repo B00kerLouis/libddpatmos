@@ -37,7 +37,8 @@ ddpatmos probe master.atmos
 | `-b`, `--bitrate` | Total kbit/s | 768 |
 | `--downmix-mode` | LTRT or LORO | LTRT |
 | `--layout` | Ordinary PCM layout | WAVE mask, then unambiguous channel count |
-| `--dialnorm` | -31 through -1 | -31 |
+| `--dialnorm` | `measure`, or explicit metadata -31 through -1 | measure, metadata -31 |
+| `--loudness` | `measure` or `off`; never applies normalization | measure |
 | `-sc`, `--spatial-clusters` | Atmos elements including LFE:12,14,16 | 16 |
 | `--object-mode` | dynamic or channelbase | dynamic |
 | `--start`, `--duration` | File-relative seconds | Whole source |
@@ -54,6 +55,39 @@ DAMF has one legal entry:the `.atmos` manifest. Standalone `.audio` and director
 entries are rejected. IAB DLC and anisotropic spread fail explicitly. PCM admits
 16/24/32-bit integers and32/64-bit floating point in the supported containers.
 
+### Loudness
+
+File encoding defaults to measurement only. It reports integrated programme LUFS
+using K weighting, complete400ms blocks at100ms hops, a-70LUFS absolute gate and
+a-10LU relative gate. The method follows the programme measurement in
+[ITU-R BS.1770](https://www.itu.int/rec/R-REC-BS.1770-5-202311-I/en).
+It does not isolate dialogue. LFE is excluded from loudness and included in the
+reported sample peak; sample peak is not true peak.
+
+Ordinary PCM is measured in its selected source layout. Quad and5.x surround
+pairs use the110-degree surround convention. In6.x/7.x, side surrounds receive
+the1.41 energy weight and rear channels receive1. The report includes all channel
+weights. Atmos is measured on the prepared5.1 compatibility downmix after spatial
+aggregation and its existing safety limiter, before lossy coding. This is labeled
+explicitly and is not a measurement of a7.1.4 render or the original object master.
+Only the selected source range is counted; coding padding and tail are excluded.
+
+Measurements never change PCM gain or automatically replace dialnorm metadata.
+The default metadata is-31, avoiding dialnorm playback attenuation for music
+masters. `--dialnorm measure` selects this behavior explicitly. Numeric
+`--dialnorm -24`, for example, requests that metadata value and its corresponding
+decoder playback adjustment while still measuring. `--loudness off` disables
+measurement without changing the selected metadata value. Options are applied
+in command-line order. No automatic normalization mode is enabled.
+
+JSON reports contain `dialogueLevel` and, when measuring, `loudness` with
+`integratedLUFS`, `samplePeakDBFS`, `measuredSamples`, `presentation`,
+`channelEnergyWeights` and `normalizationGainDB` (always0). Silence or energy below
+the absolute gate reports `belowAbsoluteGate`; ranges shorter than400ms report
+`insufficientDuration`. Unavailable numeric results are omitted from JSON.
+Eight-byte block energies use a temporary disk index rather than a programme-sized
+RAM array or an additional PCM pass.
+
 ## Framework
 
 ```swift
@@ -67,6 +101,11 @@ let report = try DDPFileEncoder.encode(
     output: URL(fileURLWithPath: outputPath),
     options: options)
 ```
+
+`DDPFileOptions.loudnessMode` defaults to `.measure`; set `.off` to omit measurement.
+`report.loudness` exposes the result. `DDPConfiguration.dialogueLevel` remains
+explicit bitstream metadata and defaults to-31. Raw `DDPEncoder` calls do not run
+file-level programme measurement or apply normalization.
 
 `DDPEncoder` accepts normalized interleaved Float PCM. Supply exactly
 `inputFrameCount` frames per call. `DDPChannelLayout.lfeChannel` identifies LFE.

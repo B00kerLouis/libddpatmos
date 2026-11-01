@@ -102,6 +102,7 @@ public struct DDPConfiguration: Sendable, Codable {
   /// Total elementary stream bitrate in kbit/s, including dependent substreams and metadata.
   public var bitrate: Int = 768
   public var downmixMode: DDPDownmixMode = .ltrt
+  /// Bitstream metadata only. -31 requests no dialnorm attenuation at playback.
   public var dialogueLevel: Int = -31
   public var sampleRate: Int = 48_000
   public var layout: DDPChannelLayout = .fiveOne
@@ -171,4 +172,6 @@ public struct DDPEncodingReport: Sendable, Codable {
   public var encodingSeconds: Double? = nil
   public var workerLimit: Int? = nil
   public var metadataIndexBytes: UInt64? = nil
+  public var dialogueLevel: Int? = nil
+  public var loudness: DDPLoudnessReport? = nil
 }

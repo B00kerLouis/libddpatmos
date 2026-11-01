@@ -10,6 +10,8 @@ public struct DDPFileOptions: Sendable {
   public var objectMode: DDPObjectMode = .dynamic
   public var start: Double = 0
   public var duration: Double?
+  /// Measurement reports programme loudness without changing PCM or dialnorm metadata.
+  public var loudnessMode: DDPLoudnessMode = .measure
   public init(configuration: DDPConfiguration = .init(), layout: DDPChannelLayout? = nil) {
     self.configuration = configuration
     self.layout = layout
@@ -82,12 +84,6 @@ public enum DDPFileEncoder {
       configuration.layout = layout
     }
     try configuration.validate()
-    let plain = info.isAtmos ? nil : try DDPEncoder(configuration: configuration)
-    let atmos =
-      info.isAtmos
-      ? try AtmosDDPEncoder(
-        source: info, configuration: configuration, elements: options.spatialElements,
-        mode: options.objectMode, metadata: { try source.metadata(at: $0) }) : nil
     let start = UInt64((options.start * Double(info.sampleRate)).rounded())
     let remaining = info.sampleCount - start
     let wanted =
@@ -96,6 +92,25 @@ public enum DDPFileEncoder {
       } ?? remaining
     guard wanted > 0 else { throw DDPError.invalidConfiguration("Selected input range is empty") }
     try source.seek(to: start)
+    let meter = options.loudnessMode == .measure
+      ? try DDPLoudnessMeter(
+        sampleRate: info.sampleRate, layout: info.isAtmos ? .fiveOne : configuration.layout,
+        atmos: info.isAtmos, directory: output.deletingLastPathComponent()) : nil
+    let plain = info.isAtmos ? nil : try DDPEncoder(configuration: configuration)
+    // The spatial limiter delays one AU. Observe prepared frames in output order
+    // and stop at the true source extent, including a partial final frame.
+    var unmeasured = wanted
+    let atmos = info.isAtmos
+      ? try AtmosDDPEncoder(
+        source: info, configuration: configuration, elements: options.spatialElements,
+        mode: options.objectMode, metadata: { try source.metadata(at: $0) },
+        observePCM: meter.map { meter in
+          { pcm in
+            let n = Int(min(unmeasured, 1536))
+            try meter.consume(pcm, frames: n)
+            unmeasured -= UInt64(n)
+          }
+        }) : nil
     let partial = output.deletingLastPathComponent().appendingPathComponent(
       ".\(output.lastPathComponent).\(UUID().uuidString).partial")
     guard FileManager.default.createFile(atPath: partial.path, contents: nil) else {
@@ -126,6 +141,7 @@ public enum DDPFileEncoder {
         pcm.append(contentsOf: repeatElement(Float(0), count: (frameSize - n) * info.channelCount))
         let data: Data
         if let plain {
+          try meter?.consume(pcm, frames: n)
           data = try plain.encode(pcm)
         } else {
           data = try atmos!.encode(pcm, at: start + consumed)
@@ -144,6 +160,8 @@ public enum DDPFileEncoder {
       try file.write(contentsOf: finalFrame)
       bytes += UInt64(finalFrame.count)
     }
+    let loudness = try meter?.finish(isCancelled: isCancelled)
+    if isCancelled() { throw CancellationError() }
     try source.validateIntegrity()
     try file.synchronize()
     try file.close()
@@ -158,6 +176,7 @@ public enum DDPFileEncoder {
       elapsedSeconds: Double(ended - jobStart) / 1e9,
       preparationSeconds: Double(encodeStart - jobStart) / 1e9,
       encodingSeconds: Double(ended - encodeStart) / 1e9,
-      workerLimit: configuration.resolvedThreads, metadataIndexBytes: info.metadataIndexBytes)
+      workerLimit: configuration.resolvedThreads, metadataIndexBytes: info.metadataIndexBytes,
+      dialogueLevel: configuration.dialogueLevel, loudness: loudness)
   }
 }
