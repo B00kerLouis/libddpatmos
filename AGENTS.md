@@ -45,6 +45,21 @@ weights, status and sample peak (not true peak). No automatic PCM normalization 
 measured-value substitution into dialnorm. Metadata defaults to-31; explicit
 numeric dialnorm remains supported. Preserve original public initializer overloads.
 
+File encoding also defaults to a-2.5dBTP true peak soft limiter, configurable by
+--ture-peak-limter (alias --true-peak-limiter) and truePeakLimitDBTP. Reconstruct
+the selected serialized quantizers with native synthesis/overlap-add; explicitly
+disable decoder dither. Check all independent/dependent channels including LFE,
+or the Atmos5.1 compatibility presentation, with16x interpolation and FIR tail.
+Only measured overloads create linked local gain envelopes (21.33ms attack,
+100ms release); no fixed level pad, normalization or makeup gain. Eight-byte
+peak/gain records use bounded disk pages on the output volume. Retry continuously
+from original sources with fresh ordered codec/spatial/authentication state,
+never concatenate independently encoded segments. Publish only after a passing
+check; cap feedback at12 passes and clean scratch/partials on graceful failure.
+Raw fixed-AU DDPEncoder calls retain their existing timing/PCM contract without
+file-level feedback. Report truePeak scope separately from source loudness and
+physical/renderer playback claims.
+
 Workers are bounded: threads0 automatic up to8,1 serial, manual up to128.
 Parallelize independent channel/element/band/block work with owned results.
 Keep overlap, positions, matrix history, sequence, authentication and output
@@ -64,6 +79,8 @@ Ordinary admission:12 layouts2.0...7.1,32/44.1/48kHz,96...1024kbit/s.
 Atmos admission:48kHz,384...1024kbit/s,12/14/16 transport elements. Document
 supported source profiles in README. Syntax/CRC, spatial reconstruction and
 physical playback are separate validation claims; do not infer certification.
+CLI -b/--bitrate is optional, defaults to768, and accepts only384,448,576,640,768
+kbit/s. Keep this CLI allowlist separate from the Framework's codec admission.
 
 Build CLI and Framework:
 `xcodebuild -project libddpatmos.xcodeproj -scheme ddpatmos -configuration Release

@@ -174,4 +174,5 @@ public struct DDPEncodingReport: Sendable, Codable {
   public var metadataIndexBytes: UInt64? = nil
   public var dialogueLevel: Int? = nil
   public var loudness: DDPLoudnessReport? = nil
+  public var truePeak: DDPTruePeakReport? = nil
 }

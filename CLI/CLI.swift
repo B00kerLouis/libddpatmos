@@ -62,7 +62,9 @@ import libddpatmos
       case "--report": reportPath = try value()
       case "-b", "--bitrate":
         let v = try value()
-        guard let n = Int(v) else { throw DDPError.invalidConfiguration("Invalid bitrate \(v)") }
+        guard let n = Int(v), [384, 448, 576, 640, 768].contains(n) else {
+          throw DDPError.invalidConfiguration("Bitrate must be 384, 448, 576, 640 or 768 kbit/s")
+        }
         options.configuration.bitrate = n
       case "--downmix-mode":
         let v = try value()
@@ -98,6 +100,12 @@ import libddpatmos
           throw DDPError.invalidConfiguration("Loudness mode must be measure or off")
         }
         options.loudnessMode = mode
+      case "--ture-peak-limter", "--true-peak-limiter":
+        let v = try value()
+        guard let n = Double(v), n.isFinite, (-60...0).contains(n) else {
+          throw DDPError.invalidConfiguration("True peak limiter must be -60...0 dBTP")
+        }
+        options.truePeakLimitDBTP = n
       case "-sc", "--spatial-clusters":
         let v = try value()
         guard let n = Int(v), [12, 14, 16].contains(n) else {
@@ -179,11 +187,12 @@ import libddpatmos
 
     -i, --input PATH           PCM WAVE/CAF, ADM BWF, DAMF .atmos or IAB MXF
     -o, --output PATH          New E-AC-3 elementary stream (refuses overwrite)
-    -b, --bitrate KBIT         Total bitrate, default 768
+    -b, --bitrate KBIT         384|448|576|640|768 kbit/s, optional, default 768
         --downmix-mode MODE   LTRT|LORO, default LTRT
         --layout LAYOUT       Ordinary PCM channel layout in WAVE order
         --dialnorm VALUE      measure (default), or explicit metadata -31...-1
         --loudness MODE       measure|off, default measure; never normalizes PCM
+        --ture-peak-limter DBTP  Decoded EC3 peak ceiling, default -2.5 (-60...0)
     -sc,--spatial-clusters N   Atmos transport elements: 12|14|16, default 16
         --object-mode MODE    dynamic|channelbase, default dynamic
         --start SECONDS       Input start, default 0

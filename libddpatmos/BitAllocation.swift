@@ -168,9 +168,20 @@ enum DDPAllocation {
 
   /// Grouped mantissas run across channel boundaries, and restart each block.
   static func mantissas(_ spectra: [Spectrum], snr: Int) -> BitWriter {
+    quantize(spectra, snr: snr, reconstruct: false).bits
+  }
+
+  struct QuantizedBlock: Sendable {
+    let bits: BitWriter
+    let coefficients: [[Double]]
+  }
+
+  static func quantize(_ spectra: [Spectrum], snr: Int, reconstruct: Bool) -> QuantizedBlock {
     var entries = [(Int, Int)]()
     var pending = [Int: [Int]]()
+    var coefficients = [[Double]]()
     for s in spectra {
+      var decoded = reconstruct ? [Double](repeating: 0, count: s.coefficients.count) : []
       for (k, b) in pointers(s, snr: snr).enumerated() {
         if b == 0 { continue }
         let normalized = max(-1, min(1 - 1e-12, s.coefficients[k] * pow(2, Double(s.exponents[k]))))
@@ -183,6 +194,18 @@ enum DDPAllocation {
           value = max(
             -(1 << (width - 1)),
             min((1 << (width - 1)) - 1, Int((normalized * Double(1 << (width - 1))).rounded())))
+        }
+        if reconstruct {
+          // Reconstruct signed Q23 and apply exponent shifts before floating
+          // synthesis, retaining the decoder's negative-value rounding.
+          // Zero-BAP bins stay zero: this writer explicitly disables dither.
+          let mantissa: Int
+          if let levels {
+            mantissa = (value - levels / 2) * 16_777_216 / levels
+          } else {
+            mantissa = value * (1 << (24 - width))
+          }
+          decoded[k] = Double(mantissa >> s.exponents[k]) / 8_388_608
         }
         if [1, 2, 4].contains(b) {
           let target = b == 4 ? 2 : 3
@@ -201,6 +224,7 @@ enum DDPAllocation {
           entries.append((value, b == 3 ? 3 : b == 5 ? 4 : width))
         }
       }
+      if reconstruct { coefficients.append(decoded) }
     }
     for (b, indices) in pending where !indices.isEmpty {
       let target = b == 4 ? 2 : 3
@@ -213,6 +237,6 @@ enum DDPAllocation {
     }
     var result = BitWriter()
     for (value, width) in entries where width > 0 { result.write(value, width) }
-    return result
+    return .init(bits: result, coefficients: coefficients)
   }
 }

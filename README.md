@@ -34,11 +34,12 @@ ddpatmos probe master.atmos
 |---|---|---|
 | `-i`, `--input` | Source PCM or master | Required |
 | `-o`, `--output` | New EC3 output | Required |
-| `-b`, `--bitrate` | Total kbit/s | 768 |
+| `-b`, `--bitrate` | Optional total kbit/s:384,448,576,640,768 only | 768 |
 | `--downmix-mode` | LTRT or LORO | LTRT |
 | `--layout` | Ordinary PCM layout | WAVE mask, then unambiguous channel count |
 | `--dialnorm` | `measure`, or explicit metadata -31 through -1 | measure, metadata -31 |
 | `--loudness` | `measure` or `off`; never applies normalization | measure |
+| `--ture-peak-limter` | Decoded EC3 true peak ceiling in dBTP, -60...0 | -2.5 |
 | `-sc`, `--spatial-clusters` | Atmos elements including LFE:12,14,16 | 16 |
 | `--object-mode` | dynamic or channelbase | dynamic |
 | `--start`, `--duration` | File-relative seconds | Whole source |
@@ -47,13 +48,45 @@ ddpatmos probe master.atmos
 
 Ordinary layouts:2.0,2.1,3.0,3.1,4.0,4.1,5.0,5.1,6.0,6.1,7.0,7.1.
 Input uses WAVE physical order. Unlabelled seven-channel PCM requires explicit
-6.1 or7.0. Ordinary PCM admits32/44.1/48kHz at96...1024kbit/s. Atmos admits
-48kHz at384...1024kbit/s.
+6.1 or7.0. The CLI accepts only384,448,576,640 or768kbit/s; omit `--bitrate`
+to use768. The Framework's underlying admission remains32/44.1/48kHz at
+96...1024kbit/s for ordinary PCM, and48kHz at384...1024kbit/s for Atmos.
 
 Sources include PCM WAVE/RF64/CAF, ADM BWF, DAMF and implemented PCM IAB MXF.
 DAMF has one legal entry:the `.atmos` manifest. Standalone `.audio` and directory
 entries are rejected. IAB DLC and anisotropic spread fail explicitly. PCM admits
 16/24/32-bit integers and32/64-bit floating point in the supported containers.
+
+### True peak soft limiter
+
+File encoding enables a linked soft limiter with a default ceiling of-2.5dBTP.
+The optional `--ture-peak-limter -3` changes the ceiling; the correctly spelled
+`--true-peak-limiter` is also accepted. There is no fixed input attenuation,
+programme normalization or makeup gain. A programme whose reconstructed output
+stays below the ceiling retains its first-pass encoded audio. Overloads create
+local gain reduction with a21.33ms attack and100ms release; surrounding channels
+share the envelope to preserve their balance.
+
+The check reconstructs the actual selected, quantized EC3 mantissas, performs
+windowed synthesis and overlap-add, and measures sample and intersample peaks
+with16x FIR interpolation across AU boundaries, including coding and filter tails.
+Decoder dither is explicitly disabled so zero-bit bins reconstruct as zero.
+The checked presentation includes every independent and dependent channel and
+LFE; for Atmos it is the5.1 compatibility presentation. This does not describe
+the peaks of an arbitrary speaker render, a downstream downmix or playback gain.
+
+If the encoded reconstruction exceeds the ceiling, the encoder rereads the
+original source and continuously re-encodes with a local correction envelope.
+Only offending neighbourhoods receive a0.15dB numerical margin. Peak and gain
+indexes use eight-byte disk records beside the output, with bounded page buffers;
+no programme PCM is staged. Every retry resets all codec and metadata state.
+The output is published only after verification succeeds, with at most12 passes;
+failure or cancellation removes partials and indexes. `--loudness off` does not
+disable the limiter. Explicit dialnorm metadata remains unchanged.
+
+The JSON `truePeak` result reports `ceilingDBTP`,
+`reconstructedTruePeakDBTP`, `limited`, `encodingPasses` and `presentation`.
+This is a numerical reconstruction check, separate from physical playback.
 
 ### Loudness
 
@@ -106,6 +139,11 @@ let report = try DDPFileEncoder.encode(
 `report.loudness` exposes the result. `DDPConfiguration.dialogueLevel` remains
 explicit bitstream metadata and defaults to-31. Raw `DDPEncoder` calls do not run
 file-level programme measurement or apply normalization.
+
+`DDPFileOptions.truePeakLimitDBTP` defaults to-2.5 and controls file encoding's
+output limiter; `report.truePeak` exposes its verification result. The raw
+fixed-AU `DDPEncoder` interface retains its PCM and timing contract and does not
+run the file-level feedback limiter.
 
 `DDPEncoder` accepts normalized interleaved Float PCM. Supply exactly
 `inputFrameCount` frames per call. `DDPChannelLayout.lfeChannel` identifies LFE.

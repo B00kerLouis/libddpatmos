@@ -280,8 +280,8 @@ final class AtmosSpatialRenderer {
       }
       return row
     }
-    guard lfe.allSatisfy({ $0.isFinite && abs($0) <= 1 }) else {
-      throw DDPError.malformedInput("Summed LFE exceeds normalized PCM range")
+    guard lfe.allSatisfy({ $0.isFinite }) else {
+      throw DDPError.malformedInput("Summed LFE is not finite")
     }
     return .init(elements: elements, downmix: core, lfe: lfe, positions: positions)
   }
@@ -291,15 +291,23 @@ final class AtmosSpatialRenderer {
 /// horizon. The gain at the next AU start therefore agrees with prior planning.
 struct AtmosLookaheadLimiter {
   private var previousGain: Double?
+  var ceiling = 0.98
+  var includeLFE = false
   static let attackStep = 1.0 / 1024
   static let releaseStep = 1.0 / 4800
 
+  init(ceiling: Double = 0.98, includeLFE: Bool = false) {
+    self.ceiling = ceiling
+    self.includeLFE = includeLFE
+  }
+
   mutating func process(_ frame: AtmosSpatialFrame, next: AtmosSpatialFrame?) -> AtmosSpatialFrame {
     var result = frame
-    let all = frame.downmix.indices.map { frame.downmix[$0] + (next?.downmix[$0] ?? []) }
+    var all = frame.downmix.indices.map { frame.downmix[$0] + (next?.downmix[$0] ?? []) }
+    if includeLFE { all.append(frame.lfe + (next?.lfe ?? [])) }
     var safe = (0..<all[0].count).map { f -> Double in
       let peak = all.reduce(0.0) { max($0, abs($1[f])) }
-      return peak > 0.98 ? 0.98 / peak : 1
+      return peak > ceiling ? ceiling / peak : 1
     }
     for f in (0..<(safe.count - 1)).reversed() {
       safe[f] = min(safe[f], safe[f + 1] + Self.attackStep)
@@ -308,6 +316,10 @@ struct AtmosLookaheadLimiter {
     for f in 0..<1536 {
       gain = min(safe[f], gain + Self.releaseStep)
       for c in 0..<5 { result.downmix[c][f] *= gain }
+      if includeLFE {
+        result.lfe[f] *= gain
+        for c in result.elements.indices { result.elements[c][f] *= gain }
+      }
     }
     previousGain = gain
     return result

@@ -192,6 +192,9 @@ final class AtmosDDPEncoder {
   private let spatial: AtmosSpatialRenderer
   private let metadata: ((UInt64) throws -> [DDPPositionEvent])?
   private let observePCM: (([Float]) throws -> Void)?
+  private let preparePCM: ((AtmosSpatialFrame, UInt64) throws -> AtmosSpatialFrame)?
+  private let observeReconstruction: (([[Double]]) throws -> Void)?
+  private var preparedUnits: UInt64 = 0
   private var pending: AtmosSpatialFrame?
   private var limiter = AtmosLookaheadLimiter()
   private var previousElements: [[Double]]
@@ -203,7 +206,9 @@ final class AtmosDDPEncoder {
   init(
     source: DDPSourceInfo, configuration: DDPConfiguration, elements: Int, mode: DDPObjectMode,
     metadata: ((UInt64) throws -> [DDPPositionEvent])? = nil,
-    observePCM: (([Float]) throws -> Void)? = nil
+    observePCM: (([Float]) throws -> Void)? = nil,
+    preparePCM: ((AtmosSpatialFrame, UInt64) throws -> AtmosSpatialFrame)? = nil,
+    observeReconstruction: (([[Double]]) throws -> Void)? = nil
   )
     throws
   {
@@ -217,11 +222,17 @@ final class AtmosDDPEncoder {
     self.source = source
     self.metadata = metadata
     self.observePCM = observePCM
+    self.preparePCM = preparePCM
+    self.observeReconstruction = observeReconstruction
+    if observeReconstruction != nil {
+      limiter = AtmosLookaheadLimiter(ceiling: 1, includeLFE: true)
+    }
     count = elements - 1
     self.mode = mode
     var c = configuration
     c.layout = .fiveOne
     core = try DDPEncoder(configuration: c)
+    if observeReconstruction != nil { core.enableReconstruction() }
     spatial = AtmosSpatialRenderer(
       source: source, elements: elements - 1, mode: mode, threads: configuration.resolvedThreads)
     previousMatrices = Array(
@@ -245,7 +256,9 @@ final class AtmosDDPEncoder {
     return try encodePrepared(limiter.process(current, next: nil))
   }
 
-  private func encodePrepared(_ frame: AtmosSpatialFrame) throws -> Data {
+  private func encodePrepared(_ original: AtmosSpatialFrame) throws -> Data {
+    let frame = try preparePCM?(original, preparedUnits) ?? original
+    preparedUnits += 1
     let elements = frame.elements
     let downmix = frame.downmix
     let lfe = frame.lfe
@@ -296,7 +309,9 @@ final class AtmosDDPEncoder {
     }
     try observePCM?(interleaved)
     sequence.advance()
-    return try core.encode(interleaved, emdf: metadata, complexity: count + 1)
+    let data = try core.encode(interleaved, emdf: metadata, complexity: count + 1)
+    try observeReconstruction?(core.reconstructedPCM)
+    return data
   }
   private func reduceBands(_ matrices: [[[Double]]], to index: Int) -> [[[Double]]] {
     let edges = [

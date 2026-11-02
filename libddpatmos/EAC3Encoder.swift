@@ -14,6 +14,17 @@ public final class DDPEncoder {
   private let dependentStream: Bool
   private let streamBitrate: Int
   private let customChannelMap: Int
+  private var synthesisOverlap: [[Double]] = []
+  private(set) var reconstructedPCM: [[Double]] = []
+  private var reconstructOutput = false
+
+  /// File-level feedback observes both the independent compatibility stream
+  /// and every dependent channel, with separate synthesis histories.
+  func enableReconstruction() {
+    reconstructOutput = true
+    synthesisOverlap = overlap.map { _ in [Double](repeating: 0, count: 256) }
+    dependent?.enableReconstruction()
+  }
   public init(configuration: DDPConfiguration) throws {
     try configuration.validate()
     self.configuration = configuration
@@ -48,6 +59,7 @@ public final class DDPEncoder {
     frameIndex = 0
     for c in overlap.indices { overlap[c] = [Double](repeating: 0, count: 256) }
     dependent?.reset()
+    if reconstructOutput { enableReconstruction() }
   }
   public func encode(_ interleaved: [Float]) throws -> Data {
     try encode(interleaved, emdf: [], complexity: 0)
@@ -145,8 +157,22 @@ public final class DDPEncoder {
     }
     let selectedSNR = low
     let finalBlocks = blocks
-    let mantissaBlocks = DDPParallel.map(count: blocks.count, threads: c.resolvedThreads) {
-      DDPAllocation.mantissas(finalBlocks[$0], snr: selectedSNR)
+    let reconstruct = reconstructOutput
+    let quantized = DDPParallel.map(count: blocks.count, threads: c.resolvedThreads) {
+      DDPAllocation.quantize(finalBlocks[$0], snr: selectedSNR, reconstruct: reconstruct)
+    }
+    let mantissaBlocks = quantized.map(\.bits)
+    if reconstruct {
+      reconstructedPCM = order.map { _ in [Double]() }
+      for block in quantized {
+        for channel in order.indices {
+          let windowed = DDPTransform.inverse(block.coefficients[channel])
+          reconstructedPCM[channel] += (0..<256).map {
+            synthesisOverlap[channel][$0] + windowed[$0]
+          }
+          synthesisOverlap[channel] = Array(windowed[256..<512])
+        }
+      }
     }
     var writer = serialize(
       blocks: blocks, snr: low, frameBytes: frameBytes, includeMantissas: true, emdf: emdf,
@@ -173,6 +199,7 @@ public final class DDPEncoder {
         for source in sources { rear.append(interleaved[f * c.layout.channels + source]) }
       }
       data.append(try dependent.encode(rear))
+      if reconstruct { reconstructedPCM += dependent.reconstructedPCM }
     }
     return data
   }
@@ -241,7 +268,10 @@ public final class DDPEncoder {
       w.write(0, 1)
     }  // per-block exponent strategies, no AHT
     w.write(0, 2)  // one frame-level SNR offset
-    for _ in 0..<6 { w.write(0, 1) }  // transient, block switch, dither, BAM, fast gain, DBA
+    w.write(0, 1)  // transient processing absent
+    w.write(0, 1)  // long blocks
+    w.write(1, 1)  // explicit dither flags: omission would turn decoder dither ON
+    for _ in 0..<3 { w.write(0, 1) }  // BAM, fast gain, DBA
     let skipSyntaxStart = w.count
     w.write(emdf.isEmpty ? 0 : 1, 1)
     w.authenticationExclusions.append(skipSyntaxStart..<w.count)
@@ -257,6 +287,7 @@ public final class DDPEncoder {
     w.write(snr & 15, 4)
     w.write(0, 1)  // no block-start offsets
     for (index, block) in blocks.enumerated() {
+      for _ in 0..<fbw { w.write(0, 1) }  // zero-BAP bins reconstruct as true zero
       w.write(0, 1)  // dynamic range absent
       w.write(0, 1)  // no spectral extension strategy
       if acmod == 2 {

@@ -45,4 +45,24 @@ enum DDPTransform {
     }
     return out
   }
+
+  private static let inverseMatrix: [Double] = (0..<512).flatMap { n in
+    (0..<256).map { k in matrix[k * 512 + n] * 512 * window[n] }
+  }
+
+  /// Windowed synthesis of the exact serialized mantissas. The caller owns
+  /// overlap-add state, just as an independent long-block decoder does.
+  static func inverse(_ coefficients: [Double]) -> [Double] {
+    var padded = coefficients
+    padded.append(contentsOf: repeatElement(0, count: 256 - coefficients.count))
+    var out = [Double](repeating: 0, count: 512)
+    inverseMatrix.withUnsafeBufferPointer { m in
+      padded.withUnsafeBufferPointer { p in
+        out.withUnsafeMutableBufferPointer { o in
+          vDSP_mmulD(m.baseAddress!, 1, p.baseAddress!, 1, o.baseAddress!, 1, 512, 1, 256)
+        }
+      }
+    }
+    return out
+  }
 }
