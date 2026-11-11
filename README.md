@@ -17,8 +17,13 @@ xcodebuild -project libddpatmos.xcodeproj -scheme ddpatmos \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-Keep `libddpatmos.framework` beside `ddpatmos` when using the CLI. Both arm64 and
-x86_64 builds are supported. CI performs a universal Release build of both products.
+`ddpatmos` statically links the shared encoder source through the Xcode
+`libddpatmosStatic` Framework target and runs without a companion `.framework`.
+The original `libddpatmos` Framework target still produces a dynamic
+`libddpatmos.framework` for library consumers. Both targets compile the same
+source directory; there is no second codec implementation. The `ddpatmos` scheme
+builds both the standalone CLI and the dynamic Framework. Both arm64 and x86_64
+builds are supported. CI verifies both architectures and the linkage types.
 
 ## CLI
 

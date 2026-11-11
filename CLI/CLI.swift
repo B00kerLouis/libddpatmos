@@ -4,7 +4,7 @@
 import Darwin
 import Dispatch
 import Foundation
-import libddpatmos
+import libddpatmosStatic
 
 @main struct DDPCommand {
   static func main() {

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 B00kerLouis.
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-// A/52 exponent-domain masking and bit allocation. See THIRD_PARTY_NOTICES.
+// DDP masking and bit allocation in the A/52 exponent domain.
 import Foundation
 
 enum DDPAllocation {

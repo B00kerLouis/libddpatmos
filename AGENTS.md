@@ -13,6 +13,14 @@ implementation language. No codec subprocess, bundled reference encoder or
 neighbouring project dependency is permitted. System XML parsing uses the SDK
 module privately; framework consumers do not need custom XML header paths.
 
+The libddpatmos target remains a dynamic Framework (MACH_O_TYPE=mh_dylib).
+The CLI imports libddpatmosStatic, a separate static Framework target compiling
+the same libddpatmos source group (MACH_O_TYPE=staticlib), and links its code into
+the executable. Never copy codec sources into CLI or embed the static Framework.
+The ddpatmos scheme builds the standalone CLI and the dynamic Framework together.
+Verify CLI dylib dependencies exclude both project Frameworks, and run a copy
+from a directory containing only the executable. Framework tests remain dynamic.
+
 The Framework owns bit I/O, lapped transforms, A/52 allocation, serialization,
 source readers, spatial aggregation and metadata. Consumers provide normalized
 Float PCM in WAVE order. Stateful instances are externally serialized; distinct

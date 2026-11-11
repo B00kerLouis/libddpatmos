@@ -31,3 +31,11 @@ jobs:
         run: |
           lipo .ci/Products/Release/ddpatmos -verify_arch arm64 x86_64
           lipo .ci/Products/Release/libddpatmos.framework/Versions/A/libddpatmos -verify_arch arm64 x86_64
+      - name: Verify CLI linkage and dynamic Framework
+        run: |
+          otool -L .ci/Products/Release/ddpatmos > .ci/cli-dependencies.txt
+          if grep -Eq 'libddpatmos(Static)?\.framework' .ci/cli-dependencies.txt; then
+            cat .ci/cli-dependencies.txt
+            exit 1
+          fi
+          otool -hv .ci/Products/Release/libddpatmos.framework/Versions/A/libddpatmos | grep -q DYLIB

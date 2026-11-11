@@ -11,7 +11,7 @@ struct DecoderInteropTests {
     FileManager.default.isExecutableFile(atPath: $0)
   }
 
-  @Test(.enabled(if: decoder != nil, "FFmpeg is required only for decoder interoperability tests"))
+  @Test(.enabled(if: decoder != nil, "DDP interoperability testing requires an independent decoder"))
   func allPhysicalChannelsDecodeIndependently() throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)

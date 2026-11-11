@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		C90BE1C930972CF800430CBD /* libddpatmos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C90BE1BF30972CF800430CBD /* libddpatmos.framework */; };
-		DDB000000000000000000001 /* libddpatmos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C90BE1BF30972CF800430CBD /* libddpatmos.framework */; };
+		DDB000000000000000000001 /* libddpatmosStatic.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDC000000000000000000002 /* libddpatmosStatic.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -23,8 +23,8 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = C90BE1B630972CF800430CBD /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = C90BE1BE30972CF800430CBD;
-			remoteInfo = libddpatmos;
+			remoteGlobalIDString = DDC000000000000000000001;
+			remoteInfo = libddpatmosStatic;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -32,6 +32,7 @@
 		C90BE1BF30972CF800430CBD /* libddpatmos.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = libddpatmos.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C90BE1C830972CF800430CBD /* libddpatmosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = libddpatmosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDB000000000000000000003 /* ddpatmos */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ddpatmos; sourceTree = BUILT_PRODUCTS_DIR; };
+		DDC000000000000000000002 /* libddpatmosStatic.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = libddpatmosStatic.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -72,8 +73,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DDB000000000000000000001 /* libddpatmos.framework in Frameworks */,
+				DDB000000000000000000001 /* libddpatmosStatic.framework in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DDC000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -94,6 +101,7 @@
 			children = (
 				DDB000000000000000000003 /* ddpatmos */,
 				C90BE1BF30972CF800430CBD /* libddpatmos.framework */,
+				DDC000000000000000000002 /* libddpatmosStatic.framework */,
 				C90BE1C830972CF800430CBD /* libddpatmosTests.xctest */,
 			);
 			name = Products;
@@ -178,6 +186,23 @@
 			productReference = DDB000000000000000000003 /* ddpatmos */;
 			productType = "com.apple.product-type.tool";
 		};
+		DDC000000000000000000001 /* libddpatmosStatic */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DDC000000000000000000005 /* Build configuration list for PBXNativeTarget "libddpatmosStatic" */;
+			buildPhases = (
+				DDC000000000000000000003 /* Sources */,
+				DDC000000000000000000004 /* Frameworks */,
+			);
+			buildRules = ();
+			dependencies = ();
+			fileSystemSynchronizedGroups = (
+				C90BE1C130972CF800430CBD /* libddpatmos */,
+			);
+			name = libddpatmosStatic;
+			productName = libddpatmosStatic;
+			productReference = DDC000000000000000000002 /* libddpatmosStatic.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -212,6 +237,7 @@
 			targets = (
 				DDB000000000000000000006 /* ddpatmos */,
 				C90BE1BE30972CF800430CBD /* libddpatmos */,
+				DDC000000000000000000001 /* libddpatmosStatic */,
 				C90BE1C730972CF800430CBD /* libddpatmosTests */,
 			);
 		};
@@ -256,6 +282,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DDC000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -266,7 +298,7 @@
 		};
 		DDB000000000000000000009 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = C90BE1BE30972CF800430CBD /* libddpatmos */;
+			target = DDC000000000000000000001 /* libddpatmosStatic */;
 			targetProxy = DDB000000000000000000002 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -417,6 +449,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACH_O_TYPE = mh_dylib;
 				MARKETING_VERSION = 1.2.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
@@ -454,6 +487,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACH_O_TYPE = mh_dylib;
 				MARKETING_VERSION = 1.2.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
@@ -518,7 +552,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -532,11 +565,54 @@
 				CODE_SIGN_STYLE = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		DDC000000000000000000006 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright (c) 2026 B00kerLouis";
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = B00kerLouis.libddpatmosStatic;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_INSTALL_MODULE = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SDKROOT)/usr/include/libxml2";
+			};
+			name = Debug;
+		};
+		DDC000000000000000000007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright (c) 2026 B00kerLouis";
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = B00kerLouis.libddpatmosStatic;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_INSTALL_MODULE = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				SYSTEM_HEADER_SEARCH_PATHS = "$(SDKROOT)/usr/include/libxml2";
 			};
 			name = Release;
 		};
@@ -575,6 +651,15 @@
 			buildConfigurations = (
 				DDB00000000000000000000A /* Debug */,
 				DDB00000000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DDC000000000000000000005 /* Build configuration list for PBXNativeTarget "libddpatmosStatic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DDC000000000000000000006 /* Debug */,
+				DDC000000000000000000007 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

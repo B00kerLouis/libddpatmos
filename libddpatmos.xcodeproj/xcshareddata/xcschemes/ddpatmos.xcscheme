@@ -14,6 +14,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "C90BE1BE30972CF800430CBD"
+               BuildableName = "libddpatmos.framework"
+               BlueprintName = "libddpatmos"
+               ReferencedContainer = "container:libddpatmos.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "NO"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "DDB000000000000000000006"
                BuildableName = "ddpatmos"
                BlueprintName = "ddpatmos"
