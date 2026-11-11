@@ -4,8 +4,8 @@ Copyright (c) 2026 B00kerLouis. Licensed under LGPL-3.0-or-later.
 
 Native Swift 6 E-AC-3 / Dolby Digital Plus encoding for macOS14+, with a Framework
 and CLI. Ordinary PCM produces the corresponding channel presentation; admitted
-Atmos masters produce E-AC-3 JOC with object metadata. The products do not require
-an external codec executable, bundled codec library or neighbouring project.
+Atmos masters produce E-AC-3 JOC with object metadata. Both products use the
+native Swift encoder.
 
 ## Build
 
@@ -178,6 +178,5 @@ states. `info.channels` exposes labels; `indexedMetadataEvents` and
 
 ## License
 
-First-party code is LGPL-3.0-or-later. See [LICENSE](LICENSE), incorporated GPLv3
-terms in [COPYING](COPYING), and retained [third-party notices](THIRD_PARTY_NOTICES.md).
-Research materials, user media and binary references are not part of this repository.
+First-party code is LGPL-3.0-or-later. See [LICENSE](LICENSE), the incorporated
+GPLv3 terms in [COPYING](COPYING), and the [license files](Licenses/).

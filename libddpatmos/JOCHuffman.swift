@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 // Normative codewords: ETSI TS 103 420 Annex A.1, fine generic table.
-// Copyright ETSI / EBU 2018; see THIRD_PARTY_NOTICES.
+// Copyright ETSI / EBU 2018.
 enum JOCHuffman {
   static let fine: [(Int, Int)] = [
     (0, 1), (4, 3), (13, 4), (30, 5), (50, 6), (98, 7), (195, 8), (387, 9), (399, 9), (779, 10),
