@@ -178,5 +178,5 @@ states. `info.channels` exposes labels; `indexedMetadataEvents` and
 
 ## License
 
-First-party code is LGPL-3.0-or-later. See [LICENSE](LICENSE), the incorporated
-GPLv3 terms in [COPYING](COPYING), and the [license files](Licenses/).
+First-party code is LGPL-3.0-or-later. See [LICENSE](LICENSE) and the incorporated
+GPLv3 terms in [COPYING](COPYING).
